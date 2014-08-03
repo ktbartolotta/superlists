@@ -1,7 +1,7 @@
 from django.test import LiveServerTestCase
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
-
+import unittest
 
 class NewVisitorTest(LiveServerTestCase):
 
@@ -37,11 +37,12 @@ class NewVisitorTest(LiveServerTestCase):
         # I type "Buy peacock feathers" into a textbox
         inputbox.send_keys("Buy peacock feathers")
 
-        # When I hit enter, the page updates, and now the page lists "1: 
-        # Buy peacock
-        # feathers" as an item in a to-do list
+        # When I hit enter, I am taken to a new URL, 
+        #and now the page lists "1: 
+        # Buy peacock feathers" as an item in a to-do list
         inputbox.send_keys(Keys.ENTER)
-        
+        my_list_url = self.browser.current_url
+        self.assertRegex(my_list_url, "/lists/.+")
         self.check_for_row_in_list_table("1: Buy peacock feathers")
 
         # There is still a textbox inviting me to add a another item.
@@ -55,8 +56,35 @@ class NewVisitorTest(LiveServerTestCase):
         self.check_for_row_in_list_table(
                 "2: Use peacock feathers to make a fly")
         
-        # I see that the site has generated a unique URL for my list and an 
-        # explanation that this is to get back to this list
+        # Now a new user comes along to the site
+
+        ## We use a new browser session to make sure that no information
+        ## of mine is coming through from cookies, etc
+        self.browser.quit()
+        self.browser = webdriver.Firefox()
+
+        # The new user visits the home page.  There is no sign of my list
+        self.browser.get(self.live_server_url)
+        page_text = self.browser.find_element_by_tag_name("body").text
+        self.assertNotIn("Buy peacock feathers", page_text)
+        self.assertNotIn("make a fly", page_text)
+
+        # The new user starts a new list by entering a new item.
+        # He is less interesting than me...
+        inputbox = self.browser.find_element_by_id("id_new_item")
+        inputbox.send_keys("Buy milk")
+        inputbox.send_keys(Keys.ENTER)
+        
+        # The new user get his own URL
+        new_user_url = self.browser.current_url
+        self.assertRegex(new_user_url, "/lists/.+")
+        self.assertNotEqual(new_user_url, my_list_url)
+
+        # Again, there is no trace of my list
+        page_text = self.browser.find_element_by_tag_name("body").text
+        self.assertNotIn("Buy peacock feathers", page_text)
+        self.assertIn("Buy milk", page_text)
+
         self.fail("Finish the test!")
         # I visit the URL and my to-list is still there
 
