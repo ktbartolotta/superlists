@@ -88,7 +88,7 @@ class NewVisitorTest(LiveServerTestCase):
         #self.fail("Finish the test!")
         # I visit the URL and my to-list is still there
 
-    def test_layout_and_styling(self):
+    def layout_and_styling(self):
         # I go to the home page
         self.browser.get(self.live_server_url)
         self.browser.set_window_size(1024, 768)
